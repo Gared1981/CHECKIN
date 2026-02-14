@@ -41,13 +41,28 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
   }, []);
 
   const loadVendedor = async () => {
-    const { data } = await supabase
-      .from('vendedores')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('vendedores')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
 
-    if (data) setVendedor(data);
+      if (error) {
+        console.error('Error cargando vendedor:', error);
+        setError('Error al cargar información del vendedor');
+        return;
+      }
+
+      if (data) {
+        setVendedor(data);
+      } else {
+        setError('No se encontró información del vendedor');
+      }
+    } catch (err) {
+      console.error('Error inesperado:', err);
+      setError('Error al cargar datos');
+    }
   };
 
   const loadRegistros = async () => {
@@ -125,17 +140,20 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
 
     try {
       const coords = await getGeolocation();
+      const ahora = new Date();
+      const esTardio = tipo === 'entrada' && !isDentroDeHorario();
+
       const registro = {
         vendedor_id: vendedor.id,
         tipo,
-        fecha_hora: new Date().toISOString(),
+        fecha_hora: ahora.toISOString(),
         latitud: coords?.lat || null,
         longitud: coords?.lng || null,
         ubicacion_nombre: null,
         lugar_foraneo: lugarForaneo.trim(),
         notas: notas.trim() || null,
         sincronizado: isOnline,
-        es_tardio: false,
+        es_tardio: esTardio,
       };
 
       if (isOnline) {
@@ -146,12 +164,58 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
           .single();
 
         if (error) throw error;
+
+        const horaFormateada = ahora.toLocaleString('es-MX', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        });
+
+        const envs = import.meta.env;
+
+        await fetch(`${envs.VITE_SUPABASE_URL}/functions/v1/confirmar-registro`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            vendedor: vendedor.nombre,
+            ruta: vendedor.ruta,
+            email: vendedor.email,
+            tipo,
+            hora: horaFormateada,
+            lugar: lugarForaneo.trim(),
+            notas: notas.trim() || 'Sin notas',
+            latitud: coords?.lat || null,
+            longitud: coords?.lng || null,
+          }),
+        }).catch(err => console.error('Error enviando confirmación:', err));
+
+        if (esTardio) {
+          await fetch(`${envs.VITE_SUPABASE_URL}/functions/v1/notificar-checada-tardia`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              vendedor: vendedor.nombre,
+              ruta: vendedor.ruta,
+              email: vendedor.email,
+              hora: horaFormateada,
+              lugar: lugarForaneo.trim(),
+              notas: notas.trim() || 'Sin notas',
+            }),
+          }).catch(err => console.error('Error enviando notificación de tardío:', err));
+        }
       } else {
         savePendingRegistro(registro);
       }
 
-      setSuccess(`${tipo === 'entrada' ? 'Check-in' : 'Check-out'} registrado exitosamente`);
-      setTimeout(() => setSuccess(''), 3000);
+      setSuccess(`${tipo === 'entrada' ? 'Check-in' : 'Check-out'} registrado exitosamente${esTardio ? ' (TARDÍO)' : ''}`);
+      setTimeout(() => setSuccess(''), 5000);
 
       setLugarForaneo('');
       setNotas('');
@@ -219,19 +283,31 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
         </div>
 
         <div className="bg-white rounded-2xl shadow-2xl p-6 mb-4">
-          <div className="flex items-center space-x-4">
-            <div className="p-3 rounded-full bg-blue-100">
-              <Clock className="w-8 h-8 text-blue-600" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className={`p-3 rounded-full ${isDentroDeHorario() ? 'bg-green-100' : 'bg-red-100'}`}>
+                <Clock className={`w-8 h-8 ${isDentroDeHorario() ? 'text-green-600' : 'text-red-600'}`} />
+              </div>
+              <div>
+                <div className="text-3xl font-bold text-gray-800 font-mono">
+                  {currentTime.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </div>
+                <div className="text-sm text-gray-600 mt-1">
+                  {currentTime.toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                </div>
+              </div>
             </div>
-            <div>
-              <div className="text-3xl font-bold text-gray-800 font-mono">
-                {currentTime.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-              </div>
-              <div className="text-sm text-gray-600 mt-1">
-                {currentTime.toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-              </div>
+            <div className={`px-4 py-2 rounded-lg ${isDentroDeHorario() ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+              <span className="font-semibold text-sm">
+                {isDentroDeHorario() ? '✓ Horario válido' : '⚠ Fuera de horario'}
+              </span>
             </div>
           </div>
+          {!isDentroDeHorario() && (
+            <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg text-orange-800 text-sm">
+              <strong>Aviso:</strong> El check-in después de las 9:05 AM se registrará como tardío y se notificará a administración.
+            </div>
+          )}
         </div>
 
         <div className="bg-white rounded-2xl shadow-2xl p-6 mb-4">
@@ -308,7 +384,9 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
               {registros.map((registro) => (
                 <div
                   key={registro.id}
-                  className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
+                  className={`flex items-start space-x-3 p-4 rounded-lg hover:bg-gray-100 transition ${
+                    registro.es_tardio ? 'bg-orange-50 border border-orange-200' : 'bg-gray-50'
+                  }`}
                 >
                   <div className={`p-2 rounded-full ${registro.tipo === 'entrada' ? 'bg-green-100' : 'bg-blue-100'}`}>
                     {registro.tipo === 'entrada' ? (
@@ -319,9 +397,16 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="font-semibold text-gray-800">
-                        {registro.tipo === 'entrada' ? 'Check-in' : 'Check-out'}
-                      </span>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-semibold text-gray-800">
+                          {registro.tipo === 'entrada' ? 'Check-in' : 'Check-out'}
+                        </span>
+                        {registro.es_tardio && (
+                          <span className="px-2 py-0.5 bg-orange-200 text-orange-800 text-xs font-semibold rounded">
+                            TARDÍO
+                          </span>
+                        )}
+                      </div>
                       <div className="flex items-center space-x-1 text-gray-600 text-sm">
                         <Clock className="w-4 h-4" />
                         <span>{new Date(registro.fecha_hora).toLocaleString('es-MX')}</span>
