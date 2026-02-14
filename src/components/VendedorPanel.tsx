@@ -50,13 +50,6 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
     try {
       console.log('🔍 Cargando vendedor para userId:', userId);
 
-      // Verificar sesión actual
-      const { data: sessionData } = await supabase.auth.getSession();
-      console.log('🔑 Sesión actual:', {
-        userId: sessionData.session?.user?.id,
-        email: sessionData.session?.user?.email
-      });
-
       const { data, error } = await supabase
         .from('vendedores')
         .select('*')
