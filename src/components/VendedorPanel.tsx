@@ -23,7 +23,13 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
   const { pendingCount, isSyncing, isOnline, savePendingRegistro, syncPendingRegistros } = useOfflineSync();
 
   useEffect(() => {
-    loadVendedor();
+    console.log('🔄 useEffect loadVendedor - userId:', userId);
+    if (userId) {
+      loadVendedor();
+    } else {
+      console.error('❌ userId es null o undefined');
+      setError('No se pudo identificar al usuario');
+    }
   }, [userId]);
 
   useEffect(() => {
@@ -42,26 +48,40 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
 
   const loadVendedor = async () => {
     try {
+      console.log('🔍 Cargando vendedor para userId:', userId);
+
+      // Verificar sesión actual
+      const { data: sessionData } = await supabase.auth.getSession();
+      console.log('🔑 Sesión actual:', {
+        userId: sessionData.session?.user?.id,
+        email: sessionData.session?.user?.email
+      });
+
       const { data, error } = await supabase
         .from('vendedores')
         .select('*')
         .eq('user_id', userId)
         .maybeSingle();
 
+      console.log('📦 Resultado de consulta vendedor:', { data, error });
+
       if (error) {
-        console.error('Error cargando vendedor:', error);
-        setError('Error al cargar información del vendedor');
+        console.error('❌ Error cargando vendedor:', error);
+        setError('Error al cargar información del vendedor: ' + error.message);
         return;
       }
 
       if (data) {
+        console.log('✅ Vendedor cargado exitosamente:', data);
         setVendedor(data);
+        setError(''); // Limpiar cualquier error previo
       } else {
+        console.warn('⚠️ No se encontró vendedor para userId:', userId);
         setError('No se encontró información del vendedor');
       }
     } catch (err) {
-      console.error('Error inesperado:', err);
-      setError('Error al cargar datos');
+      console.error('❌ Error inesperado:', err);
+      setError('Error al cargar datos: ' + (err instanceof Error ? err.message : 'Error desconocido'));
     }
   };
 
