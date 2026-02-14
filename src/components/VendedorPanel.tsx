@@ -115,16 +115,8 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
   };
 
   const handleRegistro = async (tipo: 'entrada' | 'salida') => {
-    if (!vendedor) return;
-
-    if (tipo === 'entrada' && ultimoRegistro?.tipo === 'entrada') {
-      setError('Debes hacer check-out antes de hacer otro check-in');
-      setTimeout(() => setError(''), 3000);
-      return;
-    }
-
-    if (tipo === 'salida' && (!ultimoRegistro || ultimoRegistro.tipo === 'salida')) {
-      setError('Debes hacer check-in antes de hacer check-out');
+    if (!vendedor) {
+      setError('No se pudo cargar la información del vendedor');
       setTimeout(() => setError(''), 3000);
       return;
     }
@@ -139,7 +131,11 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
     setError('');
 
     try {
+      console.log('Iniciando registro...', { vendedor: vendedor.nombre, tipo });
+
       const coords = await getGeolocation();
+      console.log('Coordenadas obtenidas:', coords);
+
       const ahora = new Date();
       const esTardio = tipo === 'entrada' && !isDentroDeHorario();
 
@@ -156,14 +152,21 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
         es_tardio: esTardio,
       };
 
+      console.log('Registro a insertar:', registro);
+
       if (isOnline) {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('registros_asistencia')
           .insert(registro)
           .select()
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error de Supabase:', error);
+          throw error;
+        }
+
+        console.log('Registro insertado exitosamente:', data);
 
         const horaFormateada = ahora.toLocaleString('es-MX', {
           hour: '2-digit',
@@ -176,7 +179,8 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
 
         const envs = import.meta.env;
 
-        await fetch(`${envs.VITE_SUPABASE_URL}/functions/v1/confirmar-registro`, {
+        console.log('Enviando confirmación por correo...');
+        const confirmacionResponse = await fetch(`${envs.VITE_SUPABASE_URL}/functions/v1/confirmar-registro`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -192,10 +196,17 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
             latitud: coords?.lat || null,
             longitud: coords?.lng || null,
           }),
-        }).catch(err => console.error('Error enviando confirmación:', err));
+        });
+
+        if (confirmacionResponse.ok) {
+          console.log('Correo de confirmación enviado exitosamente');
+        } else {
+          console.error('Error enviando confirmación:', await confirmacionResponse.text());
+        }
 
         if (esTardio) {
-          await fetch(`${envs.VITE_SUPABASE_URL}/functions/v1/notificar-checada-tardia`, {
+          console.log('Enviando notificación de check-in tardío...');
+          const tardioResponse = await fetch(`${envs.VITE_SUPABASE_URL}/functions/v1/notificar-checada-tardia`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -208,7 +219,13 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
               lugar: lugarForaneo.trim(),
               notas: notas.trim() || 'Sin notas',
             }),
-          }).catch(err => console.error('Error enviando notificación de tardío:', err));
+          });
+
+          if (tardioResponse.ok) {
+            console.log('Notificación de tardío enviada exitosamente');
+          } else {
+            console.error('Error enviando notificación de tardío:', await tardioResponse.text());
+          }
         }
       } else {
         savePendingRegistro(registro);
@@ -228,8 +245,8 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
     }
   };
 
-  const puedeHacerCheckIn = !ultimoRegistro || ultimoRegistro.tipo === 'salida';
-  const puedeHacerCheckOut = ultimoRegistro && ultimoRegistro.tipo === 'entrada';
+  const puedeHacerCheckIn = true;
+  const puedeHacerCheckOut = true;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#667eea] to-[#764ba2] p-4">
