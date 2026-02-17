@@ -1,4 +1,7 @@
-# Instrucciones de Debug - Sistema de Check-In
+# Instrucciones de Debug - Sistema de Check-In para Vendedores en Calle
+
+## 📍 ¿Qué es este sistema?
+Sistema de control de asistencia para **VENDEDORES QUE ANDAN EN LA CALLE** trabajando en rutas foráneas. Permite registrar su entrada (check-in) y salida (check-out) desde cualquier lugar donde estén trabajando.
 
 ## 🔍 Problema Reportado
 - No aparece el nombre del vendedor en el panel

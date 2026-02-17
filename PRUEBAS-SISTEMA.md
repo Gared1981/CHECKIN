@@ -1,4 +1,13 @@
-# Pruebas del Sistema de Check-In
+# Pruebas del Sistema de Check-In para Vendedores en Calle
+
+## 📍 Descripción del Sistema
+Sistema de control de asistencia diseñado específicamente para **VENDEDORES QUE ANDAN EN LA CALLE** trabajando en rutas foráneas. El sistema permite:
+- Registrar entrada (check-in) al iniciar actividades en calle
+- Registrar salida (check-out) al finalizar actividades del día
+- Capturar ubicación GPS del lugar donde se encuentran
+- Registrar lugar de hospedaje durante su ruta
+- Control de horarios y detección de llegadas tardías
+- Notificaciones automáticas por correo
 
 ## ✅ Cambios Realizados
 
