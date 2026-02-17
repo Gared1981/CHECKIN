@@ -19,6 +19,8 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
   const [success, setSuccess] = useState('');
   const [ultimoRegistro, setUltimoRegistro] = useState<RegistroAsistencia | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [ubicacionActual, setUbicacionActual] = useState<string>('');
+  const [cargandoUbicacion, setCargandoUbicacion] = useState(false);
 
   const { pendingCount, isSyncing, isOnline, savePendingRegistro, syncPendingRegistros } = useOfflineSync();
 
@@ -44,6 +46,10 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
     }, 1000);
 
     return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    cargarUbicacionActual();
   }, []);
 
   const loadVendedor = async () => {
@@ -118,6 +124,57 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
     });
   };
 
+  const getNombreUbicacion = async (lat: number, lng: number): Promise<string> => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&addressdetails=1`,
+        {
+          headers: {
+            'User-Agent': 'TerrapescaCheckIn/1.0'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        return '';
+      }
+
+      const data = await response.json();
+      const address = data.address || {};
+
+      const ciudad = address.city || address.town || address.village || address.municipality || '';
+      const estado = address.state || '';
+
+      if (ciudad && estado) {
+        return `${ciudad}, ${estado}`;
+      } else if (ciudad) {
+        return ciudad;
+      } else if (estado) {
+        return estado;
+      }
+
+      return data.display_name || '';
+    } catch (error) {
+      console.error('Error obteniendo nombre de ubicación:', error);
+      return '';
+    }
+  };
+
+  const cargarUbicacionActual = async () => {
+    setCargandoUbicacion(true);
+    try {
+      const coords = await getGeolocation();
+      if (coords) {
+        const nombreLugar = await getNombreUbicacion(coords.lat, coords.lng);
+        setUbicacionActual(nombreLugar);
+      }
+    } catch (error) {
+      console.error('Error cargando ubicación:', error);
+    } finally {
+      setCargandoUbicacion(false);
+    }
+  };
+
   const isDentroDeHorario = () => {
     const now = new Date();
     const hours = now.getHours();
@@ -149,6 +206,12 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
       const coords = await getGeolocation();
       console.log('Coordenadas obtenidas:', coords);
 
+      let nombreUbicacion = null;
+      if (coords) {
+        nombreUbicacion = await getNombreUbicacion(coords.lat, coords.lng);
+        console.log('Nombre de ubicación obtenido:', nombreUbicacion);
+      }
+
       const ahora = new Date();
       const esTardio = tipo === 'entrada' && !isDentroDeHorario();
 
@@ -158,7 +221,7 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
         fecha_hora: ahora.toISOString(),
         latitud: coords?.lat || null,
         longitud: coords?.lng || null,
-        ubicacion_nombre: null,
+        ubicacion_nombre: nombreUbicacion,
         lugar_foraneo: lugarForaneo.trim(),
         notas: notas.trim() || null,
         sincronizado: isOnline,
@@ -341,6 +404,35 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
         </div>
 
         <div className="bg-white rounded-2xl shadow-2xl p-6 mb-4">
+          <div className="flex items-center space-x-3">
+            <div className="p-3 rounded-full bg-blue-100">
+              <MapPin className="w-6 h-6 text-blue-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-gray-600 mb-1">Tu ubicación actual</h3>
+              {cargandoUbicacion ? (
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                  <span className="text-sm text-gray-500">Obteniendo ubicación...</span>
+                </div>
+              ) : ubicacionActual ? (
+                <p className="text-lg font-semibold text-gray-800">{ubicacionActual}</p>
+              ) : (
+                <p className="text-sm text-gray-500">No disponible</p>
+              )}
+            </div>
+            <button
+              onClick={cargarUbicacionActual}
+              disabled={cargandoUbicacion}
+              className="p-2 bg-blue-100 hover:bg-blue-200 rounded-lg transition disabled:opacity-50"
+              title="Actualizar ubicación"
+            >
+              <RefreshCw className={`w-5 h-5 text-blue-600 ${cargandoUbicacion ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-2xl p-6 mb-4">
           <h3 className="text-lg font-bold text-gray-800 mb-4">Registrar Asistencia</h3>
 
           <div className="space-y-4 mb-6">
@@ -443,8 +535,14 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
                       </div>
                     </div>
                     <p className="text-sm text-gray-700 mb-1">
-                      <span className="font-medium">Lugar:</span> {registro.lugar_foraneo}
+                      <span className="font-medium">Hospedaje:</span> {registro.lugar_foraneo}
                     </p>
+                    {registro.ubicacion_nombre && (
+                      <div className="flex items-center space-x-1 text-sm text-gray-700 mb-1">
+                        <MapPin className="w-4 h-4 text-blue-600" />
+                        <span><span className="font-medium">Ubicación:</span> {registro.ubicacion_nombre}</span>
+                      </div>
+                    )}
                     {registro.notas && (
                       <p className="text-sm text-gray-600">
                         <span className="font-medium">Notas:</span> {registro.notas}
@@ -453,7 +551,7 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
                     {registro.latitud && registro.longitud && (
                       <div className="flex items-center space-x-1 text-xs text-gray-500 mt-1">
                         <MapPin className="w-3 h-3" />
-                        <span>{registro.latitud.toFixed(6)}, {registro.longitud.toFixed(6)}</span>
+                        <span>GPS: {registro.latitud.toFixed(6)}, {registro.longitud.toFixed(6)}</span>
                       </div>
                     )}
                   </div>
