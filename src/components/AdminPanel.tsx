@@ -13,6 +13,7 @@ export const AdminPanel = ({ onLogout, userEmail }: AdminPanelProps) => {
   const [registros, setRegistros] = useState<RegistroAsistencia[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedVendedor, setSelectedVendedor] = useState<string | null>(null);
+  const [selectedSemanaLaboral, setSelectedSemanaLaboral] = useState<number | null>(null);
 
   useEffect(() => {
     loadData();
@@ -41,9 +42,13 @@ export const AdminPanel = ({ onLogout, userEmail }: AdminPanelProps) => {
     }
   };
 
-  const filteredRegistros = selectedVendedor
-    ? registros.filter((r) => r.vendedor_id === selectedVendedor)
-    : registros;
+  const filteredRegistros = registros.filter((r) => {
+    const matchVendedor = selectedVendedor ? r.vendedor_id === selectedVendedor : true;
+    const matchSemana = selectedSemanaLaboral !== null ? r.semana_laboral === selectedSemanaLaboral : true;
+    return matchVendedor && matchSemana;
+  });
+
+  const semanasLaborales = Array.from(new Set(registros.map((r) => r.semana_laboral))).sort((a, b) => b - a);
 
   const getVendedorNombre = (vendedorId: string) => {
     const vendedor = vendedores.find((v) => v.id === vendedorId);
@@ -107,13 +112,17 @@ export const AdminPanel = ({ onLogout, userEmail }: AdminPanelProps) => {
           <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 font-medium">Registros Hoy</p>
+                <p className="text-sm text-gray-600 font-medium">
+                  {selectedSemanaLaboral !== null ? `Registros Semana ${selectedSemanaLaboral}` : 'Registros Hoy'}
+                </p>
                 <p className="text-3xl font-bold text-gray-800">
-                  {registros.filter((r) => {
-                    const hoy = new Date().toDateString();
-                    const fechaRegistro = new Date(r.fecha_hora).toDateString();
-                    return hoy === fechaRegistro;
-                  }).length}
+                  {selectedSemanaLaboral !== null
+                    ? registros.filter((r) => r.semana_laboral === selectedSemanaLaboral).length
+                    : registros.filter((r) => {
+                        const hoy = new Date().toDateString();
+                        const fechaRegistro = new Date(r.fecha_hora).toDateString();
+                        return hoy === fechaRegistro;
+                      }).length}
                 </p>
               </div>
               <Clock className="w-12 h-12 text-green-600" />
@@ -123,13 +132,17 @@ export const AdminPanel = ({ onLogout, userEmail }: AdminPanelProps) => {
           <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 font-medium">Tardíos Hoy</p>
+                <p className="text-sm text-gray-600 font-medium">
+                  {selectedSemanaLaboral !== null ? `Tardíos Semana ${selectedSemanaLaboral}` : 'Tardíos Hoy'}
+                </p>
                 <p className="text-3xl font-bold text-gray-800">
-                  {registros.filter((r) => {
-                    const hoy = new Date().toDateString();
-                    const fechaRegistro = new Date(r.fecha_hora).toDateString();
-                    return hoy === fechaRegistro && r.es_tardio;
-                  }).length}
+                  {selectedSemanaLaboral !== null
+                    ? registros.filter((r) => r.semana_laboral === selectedSemanaLaboral && r.es_tardio).length
+                    : registros.filter((r) => {
+                        const hoy = new Date().toDateString();
+                        const fechaRegistro = new Date(r.fecha_hora).toDateString();
+                        return hoy === fechaRegistro && r.es_tardio;
+                      }).length}
                 </p>
               </div>
               <Clock className="w-12 h-12 text-orange-600" />
@@ -138,20 +151,34 @@ export const AdminPanel = ({ onLogout, userEmail }: AdminPanelProps) => {
         </div>
 
         <div className="bg-white rounded-2xl shadow-2xl p-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
             <h2 className="text-xl font-bold text-gray-800">Registros de Asistencia</h2>
-            <select
-              value={selectedVendedor || ''}
-              onChange={(e) => setSelectedVendedor(e.target.value || null)}
-              className="px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#667eea] focus:border-transparent outline-none"
-            >
-              <option value="">Todos los vendedores</option>
-              {vendedores.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.nombre} - {v.ruta}
-                </option>
-              ))}
-            </select>
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <select
+                value={selectedSemanaLaboral !== null ? selectedSemanaLaboral : ''}
+                onChange={(e) => setSelectedSemanaLaboral(e.target.value ? Number(e.target.value) : null)}
+                className="px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#003d5c] focus:border-transparent outline-none"
+              >
+                <option value="">Todas las semanas</option>
+                {semanasLaborales.map((semana) => (
+                  <option key={semana} value={semana}>
+                    Semana {semana}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={selectedVendedor || ''}
+                onChange={(e) => setSelectedVendedor(e.target.value || null)}
+                className="px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#003d5c] focus:border-transparent outline-none"
+              >
+                <option value="">Todos los vendedores</option>
+                {vendedores.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.nombre} - {v.ruta}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {loading ? (
