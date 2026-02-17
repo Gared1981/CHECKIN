@@ -20,6 +20,7 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [ubicacionActual, setUbicacionActual] = useState<string>('');
   const [cargandoUbicacion, setCargandoUbicacion] = useState(false);
+  const [semanaLaboral] = useState(8);
 
   const { pendingCount, isSyncing, isOnline, savePendingRegistro, syncPendingRegistros } = useOfflineSync();
 
@@ -226,6 +227,7 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
         notas: notas.trim() || null,
         sincronizado: isOnline,
         es_tardio: esTardio,
+        semana_laboral: semanaLaboral,
       };
 
       console.log('Registro a insertar:', registro);
@@ -325,12 +327,23 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
   const puedeHacerCheckOut = true;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#667eea] to-[#764ba2] p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#003d5c] to-[#c41e3a] p-4">
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-2xl shadow-2xl p-6 mb-4">
+          <div className="flex flex-col items-center mb-6">
+            <img
+              src="/LOGO_TERRAPESCA_vertical.webp"
+              alt="Terrapesca Logo"
+              className="h-24 mb-3"
+            />
+            <div className="bg-gradient-to-r from-[#003d5c] to-[#c41e3a] text-white px-6 py-2 rounded-lg">
+              <span className="text-lg font-bold">Semana Laboral: {semanaLaboral}</span>
+            </div>
+          </div>
+
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
-              <div className="bg-gradient-to-br from-[#667eea] to-[#764ba2] p-2 rounded-full">
+              <div className="bg-gradient-to-br from-[#003d5c] to-[#c41e3a] p-2 rounded-full">
                 <User className="w-6 h-6 text-white" />
               </div>
               <div>

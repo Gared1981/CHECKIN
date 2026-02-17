@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { LogIn } from 'lucide-react';
 
 interface LoginProps {
   onLogin: () => void;
@@ -36,19 +35,21 @@ export const Login = ({ onLogin }: LoginProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#667eea] to-[#764ba2] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#003d5c] to-[#c41e3a] flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
         <div className="flex justify-center mb-8">
-          <div className="bg-gradient-to-br from-[#667eea] to-[#764ba2] p-4 rounded-full">
-            <LogIn className="w-12 h-12 text-white" />
-          </div>
+          <img
+            src="/LOGO_TERRAPESCA_vertical.webp"
+            alt="Terrapesca Logo"
+            className="h-32"
+          />
         </div>
 
         <h1 className="text-3xl font-bold text-center text-gray-800 mb-2">
-          Terrapesca
+          Sistema de Check-in
         </h1>
         <p className="text-center text-gray-600 mb-8">
-          Sistema de Check-in para Vendedores
+          Ingresa tus credenciales para continuar
         </p>
 
         <form onSubmit={handleLogin} className="space-y-4">
@@ -62,7 +63,7 @@ export const Login = ({ onLogin }: LoginProps) => {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="tu@email.com"
               required
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#667eea] focus:border-transparent outline-none transition"
+              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#003d5c] focus:border-transparent outline-none transition"
             />
           </div>
 
@@ -76,7 +77,7 @@ export const Login = ({ onLogin }: LoginProps) => {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#667eea] focus:border-transparent outline-none transition"
+              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#003d5c] focus:border-transparent outline-none transition"
             />
           </div>
 
@@ -89,7 +90,7 @@ export const Login = ({ onLogin }: LoginProps) => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-[#667eea] to-[#764ba2] hover:from-[#5568d3] hover:to-[#6941a5] text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-gradient-to-r from-[#003d5c] to-[#c41e3a] hover:from-[#002a42] hover:to-[#a01829] text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
           </button>

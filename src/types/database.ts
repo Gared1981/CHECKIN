@@ -55,6 +55,7 @@ export interface Database {
           created_at: string
           sincronizado: boolean
           es_tardio: boolean
+          semana_laboral: number
         }
         Insert: {
           id?: string
@@ -69,6 +70,7 @@ export interface Database {
           created_at?: string
           sincronizado?: boolean
           es_tardio?: boolean
+          semana_laboral?: number
         }
         Update: {
           id?: string
@@ -83,6 +85,7 @@ export interface Database {
           created_at?: string
           sincronizado?: boolean
           es_tardio?: boolean
+          semana_laboral?: number
         }
       }
     }

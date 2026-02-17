@@ -51,12 +51,23 @@ export const AdminPanel = ({ onLogout, userEmail }: AdminPanelProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#667eea] to-[#764ba2] p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#003d5c] to-[#c41e3a] p-4">
       <div className="max-w-7xl mx-auto">
         <div className="bg-white rounded-2xl shadow-2xl p-6 mb-4">
+          <div className="flex flex-col items-center mb-6">
+            <img
+              src="/LOGO_TERRAPESCA_vertical.webp"
+              alt="Terrapesca Logo"
+              className="h-24 mb-3"
+            />
+            <div className="bg-gradient-to-r from-[#003d5c] to-[#c41e3a] text-white px-6 py-2 rounded-lg">
+              <span className="text-lg font-bold">Semana Laboral: 8</span>
+            </div>
+          </div>
+
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="bg-gradient-to-br from-[#667eea] to-[#764ba2] p-2 rounded-full">
+              <div className="bg-gradient-to-br from-[#003d5c] to-[#c41e3a] p-2 rounded-full">
                 <Users className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -181,6 +192,9 @@ export const AdminPanel = ({ onLogout, userEmail }: AdminPanelProps) => {
                             TARDÍO
                           </span>
                         )}
+                        <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-semibold rounded">
+                          Semana {registro.semana_laboral}
+                        </span>
                       </div>
                       <div className="flex items-center space-x-1 text-gray-600 text-sm">
                         <Clock className="w-4 h-4" />
