@@ -9,6 +9,13 @@ interface VendedorPanelProps {
   onLogout: () => void;
 }
 
+const getNumeroSemanaLaboral = (): number => {
+  const now = new Date();
+  const startOfYear = new Date(now.getFullYear(), 0, 1);
+  const days = Math.floor((now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000));
+  return Math.ceil((days + startOfYear.getDay() + 1) / 7);
+};
+
 export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
   const [vendedor, setVendedor] = useState<Vendedor | null>(null);
   const [registros, setRegistros] = useState<RegistroAsistencia[]>([]);
@@ -20,7 +27,7 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [ubicacionActual, setUbicacionActual] = useState<string>('');
   const [cargandoUbicacion, setCargandoUbicacion] = useState(false);
-  const [semanaLaboral] = useState(8);
+  const [semanaLaboral] = useState(getNumeroSemanaLaboral());
 
   const { pendingCount, isSyncing, isOnline, savePendingRegistro, syncPendingRegistros } = useOfflineSync();
 

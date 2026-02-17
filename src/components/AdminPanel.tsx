@@ -8,12 +8,20 @@ interface AdminPanelProps {
   userEmail: string;
 }
 
+const getNumeroSemanaLaboral = (): number => {
+  const now = new Date();
+  const startOfYear = new Date(now.getFullYear(), 0, 1);
+  const days = Math.floor((now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000));
+  return Math.ceil((days + startOfYear.getDay() + 1) / 7);
+};
+
 export const AdminPanel = ({ onLogout, userEmail }: AdminPanelProps) => {
   const [vendedores, setVendedores] = useState<Vendedor[]>([]);
   const [registros, setRegistros] = useState<RegistroAsistencia[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedVendedor, setSelectedVendedor] = useState<string | null>(null);
   const [selectedSemanaLaboral, setSelectedSemanaLaboral] = useState<number | null>(null);
+  const [semanaActual] = useState(getNumeroSemanaLaboral());
 
   useEffect(() => {
     loadData();
@@ -66,7 +74,7 @@ export const AdminPanel = ({ onLogout, userEmail }: AdminPanelProps) => {
               className="h-24 mb-3"
             />
             <div className="bg-gradient-to-r from-[#003d5c] to-[#c41e3a] text-white px-6 py-2 rounded-lg">
-              <span className="text-lg font-bold">Semana Laboral: 8</span>
+              <span className="text-lg font-bold">Semana Laboral: {semanaActual}</span>
             </div>
           </div>
 
