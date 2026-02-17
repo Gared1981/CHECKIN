@@ -6,9 +6,13 @@
    - Email: `administracion@terrapesca.com`
    - Contraseña: `admin123`
 
-2. **Administrador Adicional**
+2. **Administrador - MH**
    - Email: `mh@terrapesca.com`
    - Contraseña: `mh123`
+
+3. **Administrador - EA**
+   - Email: `earmenta@terrapesca.com`
+   - Contraseña: `ea123`
 
 ## Vendedores
 
@@ -36,11 +40,6 @@
    - Ruta: F05
    - Email: `jvaldez@terrapesca.com`
    - Contraseña: `jmv123`
-
-## Otro Usuario
-
-- Email: `earmenta@terrapesca.com`
-- Contraseña: `ea123`
 
 ---
 
