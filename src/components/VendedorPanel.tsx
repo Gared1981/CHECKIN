@@ -17,7 +17,6 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [ultimoRegistro, setUltimoRegistro] = useState<RegistroAsistencia | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [ubicacionActual, setUbicacionActual] = useState<string>('');
   const [cargandoUbicacion, setCargandoUbicacion] = useState(false);
@@ -96,9 +95,6 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
 
     if (data) {
       setRegistros(data);
-      if (data.length > 0) {
-        setUltimoRegistro(data[0]);
-      }
     }
   };
 
@@ -233,7 +229,7 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
       if (isOnline) {
         const { data, error } = await supabase
           .from('registros_asistencia')
-          .insert(registro)
+          .insert(registro as any)
           .select()
           .single();
 
