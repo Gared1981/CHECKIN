@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useOfflineSync } from '../hooks/useOfflineSync';
 import type { Vendedor, RegistroAsistencia } from '../types/database';
-import { LogIn, LogOut, MapPin, Clock, Wifi, WifiOff, RefreshCw, User, MapPinOff } from 'lucide-react';
+import { LogIn, LogOut, MapPin, Clock, Wifi, WifiOff, RefreshCw, User } from 'lucide-react';
 
 interface VendedorPanelProps {
   userId: string;
@@ -20,7 +20,6 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [ubicacionActual, setUbicacionActual] = useState<string>('');
   const [cargandoUbicacion, setCargandoUbicacion] = useState(false);
-  const [ubicacionHabilitada, setUbicacionHabilitada] = useState(true);
 
   const { pendingCount, isSyncing, isOnline, savePendingRegistro, syncPendingRegistros } = useOfflineSync();
 
@@ -200,19 +199,17 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
     try {
       console.log('Iniciando registro...', { vendedor: vendedor.nombre, tipo });
 
-      let coords = null;
+      const coords = await getGeolocation();
+      console.log('Coordenadas obtenidas:', coords);
+
+      if (!coords) {
+        throw new Error('No se pudo obtener la ubicación. La ubicación es obligatoria para registrar asistencia.');
+      }
+
       let nombreUbicacion = null;
-
-      if (ubicacionHabilitada) {
-        coords = await getGeolocation();
-        console.log('Coordenadas obtenidas:', coords);
-
-        if (coords) {
-          nombreUbicacion = await getNombreUbicacion(coords.lat, coords.lng);
-          console.log('Nombre de ubicación obtenido:', nombreUbicacion);
-        }
-      } else {
-        console.log('Ubicación deshabilitada por el usuario');
+      if (coords) {
+        nombreUbicacion = await getNombreUbicacion(coords.lat, coords.lng);
+        console.log('Nombre de ubicación obtenido:', nombreUbicacion);
       }
 
       const ahora = new Date();
@@ -407,59 +404,32 @@ export const VendedorPanel = ({ userId, onLogout }: VendedorPanelProps) => {
         </div>
 
         <div className="bg-white rounded-2xl shadow-2xl p-6 mb-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center space-x-2">
-              <div className={`p-2 rounded-full ${ubicacionHabilitada ? 'bg-blue-100' : 'bg-gray-100'}`}>
-                {ubicacionHabilitada ? (
-                  <MapPin className="w-5 h-5 text-blue-600" />
-                ) : (
-                  <MapPinOff className="w-5 h-5 text-gray-600" />
-                )}
-              </div>
-              <h3 className="text-sm font-semibold text-gray-700">Ubicación GPS</h3>
+          <div className="flex items-center space-x-3">
+            <div className="p-3 rounded-full bg-blue-100">
+              <MapPin className="w-6 h-6 text-blue-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-gray-600 mb-1">Tu ubicación actual</h3>
+              {cargandoUbicacion ? (
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                  <span className="text-sm text-gray-500">Obteniendo ubicación...</span>
+                </div>
+              ) : ubicacionActual ? (
+                <p className="text-lg font-semibold text-gray-800">{ubicacionActual}</p>
+              ) : (
+                <p className="text-sm text-gray-500">No disponible</p>
+              )}
             </div>
             <button
-              onClick={() => setUbicacionHabilitada(!ubicacionHabilitada)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                ubicacionHabilitada ? 'bg-blue-600' : 'bg-gray-300'
-              }`}
+              onClick={cargarUbicacionActual}
+              disabled={cargandoUbicacion}
+              className="p-2 bg-blue-100 hover:bg-blue-200 rounded-lg transition disabled:opacity-50"
+              title="Actualizar ubicación"
             >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  ubicacionHabilitada ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
+              <RefreshCw className={`w-5 h-5 text-blue-600 ${cargandoUbicacion ? 'animate-spin' : ''}`} />
             </button>
           </div>
-
-          {ubicacionHabilitada ? (
-            <div className="flex items-center space-x-3">
-              <div className="flex-1">
-                {cargandoUbicacion ? (
-                  <div className="flex items-center space-x-2">
-                    <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
-                    <span className="text-sm text-gray-500">Obteniendo ubicación...</span>
-                  </div>
-                ) : ubicacionActual ? (
-                  <p className="text-base font-semibold text-gray-800">{ubicacionActual}</p>
-                ) : (
-                  <p className="text-sm text-gray-500">No disponible</p>
-                )}
-              </div>
-              <button
-                onClick={cargarUbicacionActual}
-                disabled={cargandoUbicacion}
-                className="p-2 bg-blue-100 hover:bg-blue-200 rounded-lg transition disabled:opacity-50"
-                title="Actualizar ubicación"
-              >
-                <RefreshCw className={`w-5 h-5 text-blue-600 ${cargandoUbicacion ? 'animate-spin' : ''}`} />
-              </button>
-            </div>
-          ) : (
-            <p className="text-sm text-gray-500">
-              La ubicación GPS está desactivada. Tus registros no incluirán información de ubicación.
-            </p>
-          )}
         </div>
 
         <div className="bg-white rounded-2xl shadow-2xl p-6 mb-4">
