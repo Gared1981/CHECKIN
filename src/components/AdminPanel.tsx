@@ -190,12 +190,22 @@ export const AdminPanel = ({ onLogout, userEmail }: AdminPanelProps) => {
                     <p className="text-sm text-gray-700 mb-1">
                       <span className="font-medium">Hospedaje:</span> {registro.lugar_foraneo}
                     </p>
-                    {registro.ubicacion_nombre && (
-                      <div className="flex items-center space-x-1 text-sm text-gray-700 mb-1">
-                        <MapPin className="w-4 h-4 text-blue-600" />
-                        <span>
-                          <span className="font-medium">Ubicación:</span> {registro.ubicacion_nombre}
-                        </span>
+                    {(registro.ubicacion_nombre || (registro.latitud && registro.longitud)) && (
+                      <div className="bg-blue-50 border border-blue-100 rounded-lg p-2 mb-1">
+                        {registro.ubicacion_nombre && (
+                          <div className="flex items-center space-x-1 text-sm text-blue-900 mb-1">
+                            <MapPin className="w-4 h-4 text-blue-600" />
+                            <span className="font-medium">{registro.ubicacion_nombre}</span>
+                          </div>
+                        )}
+                        {registro.latitud && registro.longitud && (
+                          <div className="flex items-center space-x-1 text-xs text-blue-700">
+                            <MapPin className="w-3 h-3" />
+                            <span className="font-mono">
+                              {registro.latitud.toFixed(6)}, {registro.longitud.toFixed(6)}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     )}
                     {registro.notas && (

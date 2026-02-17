@@ -10,8 +10,12 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
 
+const ADMIN_EMAILS = [
+  'administracion@terrapesca.com',
+  'mh@terrapesca.com'
+];
+
 export const isAdmin = (email?: string | null): boolean => {
   if (!email) return false;
-  const adminEmail = import.meta.env.VITE_ADMIN_EMAIL;
-  return email.toLowerCase() === adminEmail?.toLowerCase();
+  return ADMIN_EMAILS.includes(email.toLowerCase());
 };
